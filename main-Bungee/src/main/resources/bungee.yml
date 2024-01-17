@@ -1,0 +1,3 @@
+name: iSLAND
+version: '${version}'
+main: com.github.bryanser.island.bungee.Main
