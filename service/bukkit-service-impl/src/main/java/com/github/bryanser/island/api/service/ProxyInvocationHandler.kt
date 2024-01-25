@@ -43,6 +43,7 @@ class ProxyInvocationHandler(
                 throw IllegalArgumentException()
             }
             val methodName = method.name
+            val className = targetClass.name
             methodMap[method] = { args ->
                 val uid = UUID.randomUUID()
                 val single = Single.fromCallable {
@@ -50,6 +51,7 @@ class ProxyInvocationHandler(
                     val out = ObjectOutputStream(byteOutput)
                     out.writeLong(uid.mostSignificantBits)
                     out.writeLong(uid.leastSignificantBits)
+                    out.writeUTF(className)
                     out.writeUTF(methodName)
                     out.writeInt(index)
                     out.writeInt(args.size)

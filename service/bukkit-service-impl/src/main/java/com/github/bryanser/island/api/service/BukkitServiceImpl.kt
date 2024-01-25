@@ -1,5 +1,6 @@
 package com.github.bryanser.island.api.service
 
+import com.github.bryanser.island.api.BukkitAPI
 import com.github.bryanser.island.api.BungeeAPI
 import com.google.gson.GsonBuilder
 import io.reactivex.Observable
@@ -18,19 +19,30 @@ import java.lang.reflect.Proxy
 import java.lang.reflect.Type
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.collections.HashMap
 
 class BukkitServiceImpl(
     val plugin: JavaPlugin
 ) : PluginMessageListener {
     val gson = GsonBuilder().create()
+    private val registerBukkitImpl = HashMap<String, BukkitImplDelegate>()
 
     init {
-        Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, ServiceManager.CHANNEL_BUKKIT_BUNGEE)
-        Bukkit.getMessenger().registerIncomingPluginChannel(plugin, ServiceManager.CHANNEL_BUNGEE_BUKKIT, this)
-        ServiceManager.bungeeAPIRegister = {
+        Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, ServiceManager.CHANNEL_BUNGEEAPI_BUKKIT_BUNGEE)
+        Bukkit.getMessenger()
+            .registerIncomingPluginChannel(plugin, ServiceManager.CHANNEL_BUNGEEAPI_BUNGEE_BUKKIT, this)
+        Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, ServiceManager.CHANNEL_BUKKITAPI_BUKKIT_BUNGEE)
+        Bukkit.getMessenger()
+            .registerIncomingPluginChannel(plugin, ServiceManager.CHANNEL_BUKKITAPI_BUNGEE_BUKKIT, this)
+        ServiceManager.bungeeAPICreator = {
             createBungeeAPIDelegate(it)
         }
 
+    }
+
+    fun registerBukkitAPI(api: BukkitAPI) {
+        registerBukkitImpl[api.javaClass.name] = BukkitImplDelegate(plugin, api)
     }
 
     private fun <T : BungeeAPI> createBungeeAPIDelegate(clazz: Class<T>): T {
@@ -48,7 +60,7 @@ class BukkitServiceImpl(
         if (!isSingle) {
             request.subscribeBy({
                 Bukkit.getServer().sendPluginMessage(
-                    plugin, ServiceManager.CHANNEL_BUKKIT_BUNGEE, it
+                    plugin, ServiceManager.CHANNEL_BUNGEEAPI_BUKKIT_BUNGEE, it
                 )
             })
             return Single.just(true)
@@ -57,7 +69,7 @@ class BukkitServiceImpl(
             emitters[uuid] = singleType to it
             request.subscribeBy({
                 Bukkit.getServer().sendPluginMessage(
-                    plugin, ServiceManager.CHANNEL_BUKKIT_BUNGEE, it
+                    plugin, ServiceManager.CHANNEL_BUNGEEAPI_BUKKIT_BUNGEE, it
                 )
             })
         }.doOnDispose {
@@ -66,53 +78,15 @@ class BukkitServiceImpl(
 
     }
 
-    override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
-        if (channel != ServiceManager.CHANNEL_BUNGEE_BUKKIT) {
-            return
-        }
+
+    private fun onCallbackReceived(message: ByteArray) {
         Observable.fromCallable {
             val byteIn = ByteArrayInputStream(message)
             val input = ObjectInputStream(byteIn)
             val uuid = UUID(input.readLong(), input.readLong())
             val (singleType, emitter) = emitters.remove(uuid) ?: throw IllegalStateException()
             val result: Any = if (singleType != null) {
-                when (singleType) {
-                    Int::class.java -> {
-                        input.readInt()
-                    }
-
-                    Short::class.java -> {
-                        input.readShort()
-                    }
-
-                    Byte::class.java -> {
-                        input.readBoolean()
-                    }
-
-                    Long::class.java -> {
-                        input.readLong()
-                    }
-
-                    Float::class.java -> {
-                        input.readFloat()
-                    }
-
-                    Double::class.java -> {
-                        input.readDouble()
-                    }
-
-                    Boolean::class.java -> {
-                        input.readBoolean()
-                    }
-
-                    String::class.java -> {
-                        input.readUTF()
-                    }
-
-                    else -> {
-                        gson.fromJson(input.readUTF(), singleType)
-                    }
-                }
+                input.readNext(singleType)
             } else {
                 Any()
             }
@@ -121,6 +95,68 @@ class BukkitServiceImpl(
             .subscribe {
                 it.second.onSuccess(it.first)
             }
+    }
 
+    private fun onRPCReceived(message: ByteArray) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin) {
+            val byteIn = ByteArrayInputStream(message)
+            val input = ObjectInputStream(byteIn)
+            val uuid = UUID(input.readLong(), input.readLong())
+            val className = input.readUTF()
+            registerBukkitImpl[className]?.onReceivedCall(
+                uuid, input
+            )
+        }
+
+    }
+
+    override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
+        if (channel == ServiceManager.CHANNEL_BUKKITAPI_BUNGEE_BUKKIT) {
+            onRPCReceived(message)
+        }
+        if (channel == ServiceManager.CHANNEL_BUNGEEAPI_BUNGEE_BUKKIT) {
+            onCallbackReceived(message)
+        }
+
+    }
+}
+
+fun ObjectInputStream.readNext(type: Type): Any {
+    return when (type) {
+        Int::class.java -> {
+            this.readInt()
+        }
+
+        Short::class.java -> {
+            this.readShort()
+        }
+
+        Byte::class.java -> {
+            this.readBoolean()
+        }
+
+        Long::class.java -> {
+            this.readLong()
+        }
+
+        Float::class.java -> {
+            this.readFloat()
+        }
+
+        Double::class.java -> {
+            this.readDouble()
+        }
+
+        Boolean::class.java -> {
+            this.readBoolean()
+        }
+
+        String::class.java -> {
+            this.readUTF()
+        }
+
+        else -> {
+            gson.fromJson(this.readUTF(), type)
+        }
     }
 }

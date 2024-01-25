@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 }
 include("service:api")
 include("service:bukkit-service-impl")
+include("service:bungee-service-impl")

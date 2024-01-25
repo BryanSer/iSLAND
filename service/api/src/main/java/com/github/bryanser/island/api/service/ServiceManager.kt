@@ -5,16 +5,20 @@ import com.github.bryanser.island.api.BungeeAPI
 import java.util.concurrent.ConcurrentHashMap
 
 object ServiceManager {
-    const val CHANNEL_BUKKIT_BUNGEE = "island:bukkit"
-    const val CHANNEL_BUNGEE_BUKKIT = "island:bungee"
+    //schema:type:sender
+    const val CHANNEL_BUNGEEAPI_BUKKIT_BUNGEE = "island:bungeeAPI:bukkit"
+    const val CHANNEL_BUNGEEAPI_BUNGEE_BUKKIT = "island:bungeeAPI:bungee"
+
+    const val CHANNEL_BUKKITAPI_BUKKIT_BUNGEE = "island:bukkitAPI:bukkit"
+    const val CHANNEL_BUKKITAPI_BUNGEE_BUKKIT = "island:bukkitAPI:bungee"
 
     @PublishedApi
     internal val bukkitAPICache = ConcurrentHashMap<Class<out BukkitAPI>, BukkitAPI>()
     @PublishedApi
     internal val bungeeAPICache = ConcurrentHashMap<Class<out BungeeAPI>, BungeeAPI>()
 
-    lateinit var bukkitAPIRegister: (Class<out BukkitAPI>) -> BukkitAPI
-    lateinit var bungeeAPIRegister: (Class<out BungeeAPI>) -> BungeeAPI
+    lateinit var bukkitAPICreator: (Class<out BukkitAPI>) -> BukkitAPI
+    lateinit var bungeeAPICreator: (Class<out BungeeAPI>) -> BungeeAPI
 
     inline fun <reified API : BukkitAPI> getBukkitAPI(): API {
         val cache = bukkitAPICache[API::class.java] as? API
@@ -25,7 +29,7 @@ object ServiceManager {
                 (bukkitAPICache[API::class.java] as? API)?.let {
                     return it
                 }
-                val api = bukkitAPIRegister(API::class.java) as API
+                val api = bukkitAPICreator(API::class.java) as API
                 bukkitAPICache[API::class.java] = api
                 return api
             }
@@ -41,7 +45,7 @@ object ServiceManager {
                 (bungeeAPICache[API::class.java] as? API)?.let {
                     return it
                 }
-                val api = bungeeAPIRegister(API::class.java) as API
+                val api = bungeeAPICreator(API::class.java) as API
                 bungeeAPICache[API::class.java] = api
                 return api
             }
