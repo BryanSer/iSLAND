@@ -1,3 +1,3 @@
 package com.github.bryanser.island.api
 
-interface BungeeAPI
+interface BungeeAPI: RemoteAPI

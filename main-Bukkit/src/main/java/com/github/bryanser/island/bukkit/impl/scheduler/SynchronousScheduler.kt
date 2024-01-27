@@ -1,22 +1,22 @@
-package com.github.bryanser.island.bukkit.scheduler
+package com.github.bryanser.island.bukkit.impl.scheduler
 
 import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
 
-class AsynchronousScheduler(
+class SynchronousScheduler(
     val plugin: Plugin
-): AbstractScheduler() {
+) : AbstractScheduler() {
     val scheduler = Bukkit.getScheduler()
     override fun schedule(runnable: Runnable): BukkitTask {
-        return scheduler.runTaskAsynchronously(plugin, runnable)
+        return scheduler.runTask(plugin, runnable)
     }
 
     override fun schedule(runnable: Runnable, delay: Long): BukkitTask {
-        return scheduler.runTaskLaterAsynchronously(plugin, runnable, delay)
+        return scheduler.runTaskLater(plugin, runnable, delay)
     }
 
     override fun schedule(runnable: Runnable, delay: Long, interval: Long): BukkitTask {
-        return scheduler.runTaskTimerAsynchronously(plugin, runnable, delay, interval)
+        return scheduler.runTaskTimer(plugin, runnable, delay, interval)
     }
 }

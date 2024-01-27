@@ -4,7 +4,6 @@ import com.github.bryanser.island.api.BungeeAPI
 import com.google.gson.GsonBuilder
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
-import org.bukkit.plugin.java.JavaPlugin
 import java.io.ByteArrayOutputStream
 import java.io.ObjectOutputStream
 import java.lang.IllegalArgumentException
@@ -19,7 +18,7 @@ class ProxyInvocationHandler(
     val targetClass: Class<out BungeeAPI>
 ) : InvocationHandler {
 
-    private val methodMap = hashMapOf<Method, (Array<out Any>) -> Any?>()
+    private val methodMap = hashMapOf<Method, (Array<out Any?>) -> Any?>()
     val gson = GsonBuilder().create()
 
     init {
@@ -42,6 +41,7 @@ class ProxyInvocationHandler(
             } else {
                 throw IllegalArgumentException()
             }
+            val typeList = method.parameterTypes
             val methodName = method.name
             val className = targetClass.name
             methodMap[method] = { args ->
@@ -55,41 +55,9 @@ class ProxyInvocationHandler(
                     out.writeUTF(methodName)
                     out.writeInt(index)
                     out.writeInt(args.size)
-                    for (arg in args) {
-                        when (arg) {
-                            is Int -> {
-                                out.writeInt(arg)
-                            }
-
-                            is Byte -> {
-                                out.writeByte(arg.toInt())
-                            }
-
-                            is Short -> {
-                                out.writeShort(arg.toInt())
-                            }
-
-                            is Long -> {
-                                out.writeLong(arg)
-                            }
-
-                            is Float -> {
-                                out.writeFloat(arg)
-                            }
-                            is Double->{
-                                out.writeDouble(arg)
-                            }
-                            is Boolean->{
-                                out.writeBoolean(arg)
-                            }
-                            is String->{
-                                out.writeUTF(arg)
-                            }
-                            else ->{
-                                val json = gson.toJson(arg)
-                                out.writeUTF(json)
-                            }
-                        }
+                    for ((i, type) in typeList.withIndex()) {
+                        val arg = args[i]
+                        out.writeNext(arg)
                     }
                     out.flush()
                     byteOutput.flush()

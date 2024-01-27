@@ -1,11 +1,11 @@
-package com.github.bryanser.island.bungee.scheduler
+package com.github.bryanser.island.bukkit.impl.scheduler
 
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.plugins.RxJavaPlugins
-import net.md_5.bungee.api.plugin.Plugin
-import net.md_5.bungee.api.scheduler.ScheduledTask
+import org.bukkit.plugin.Plugin
+import org.bukkit.scheduler.BukkitTask
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 
@@ -39,21 +39,21 @@ fun initRxJava(plugin: Plugin){
 abstract class AbstractScheduler : Scheduler() {
 
 
-    protected abstract fun schedule(runnable: Runnable): ScheduledTask
+    protected abstract fun schedule(runnable: Runnable): BukkitTask
 
-    protected abstract fun schedule(runnable: Runnable, delay: Long): ScheduledTask
+    protected abstract fun schedule(runnable: Runnable, delay: Long): BukkitTask
 
-    protected abstract fun schedule(runnable: Runnable, delay: Long, interval: Long): ScheduledTask
+    protected abstract fun schedule(runnable: Runnable, delay: Long, interval: Long): BukkitTask
 
     override fun createWorker(): Worker {
-        return BungeeRxWorker()
+        return BukkitRxWorker()
     }
 
-    inner class BungeeRxWorker : Worker() {
+    inner class BukkitRxWorker : Worker() {
         private val compositeDisposable = CompositeDisposable()
 
         override fun schedule(runnable: Runnable, delay: Long, unit: TimeUnit): Disposable {
-            val bukkitTask: ScheduledTask = this@AbstractScheduler.schedule(runnable, convertTimeToMillis(delay, unit))
+            val bukkitTask: BukkitTask = this@AbstractScheduler.schedule(runnable, convertTimeToTicks(delay, unit))
             val disposable: Disposable = DisposableBukkitTask(bukkitTask)
             compositeDisposable.add(disposable)
             return disposable
@@ -65,10 +65,10 @@ abstract class AbstractScheduler : Scheduler() {
             period: Long,
             unit: TimeUnit
         ): Disposable {
-            val bukkitTask: ScheduledTask = this@AbstractScheduler.schedule(
+            val bukkitTask: BukkitTask = this@AbstractScheduler.schedule(
                 runnable,
-                convertTimeToMillis(initialDelay, unit),
-                convertTimeToMillis(period, unit)
+                convertTimeToTicks(initialDelay, unit),
+                convertTimeToTicks(period, unit)
             )
             val disposable: Disposable = DisposableBukkitTask(bukkitTask)
             compositeDisposable.add(disposable)
@@ -76,7 +76,7 @@ abstract class AbstractScheduler : Scheduler() {
         }
 
         override fun schedule(runnable: Runnable): Disposable {
-            val bukkitTask: ScheduledTask = this@AbstractScheduler.schedule(runnable)
+            val bukkitTask: BukkitTask = this@AbstractScheduler.schedule(runnable)
             val disposable: Disposable = DisposableBukkitTask(bukkitTask)
             compositeDisposable.add(disposable)
             return disposable
@@ -90,12 +90,12 @@ abstract class AbstractScheduler : Scheduler() {
             return compositeDisposable.isDisposed();
         }
 
-        private fun convertTimeToMillis(time: Long, timeUnit: TimeUnit): Long {
-            return timeUnit.toMillis(time)
+        private fun convertTimeToTicks(time: Long, timeUnit: TimeUnit): Long {
+            return Math.round(timeUnit.toMillis(time).toDouble() / 50.0).toLong()
         }
 
         private inner class DisposableBukkitTask constructor(
-            private val bungeeTask: ScheduledTask
+            private val bukkitTask: BukkitTask
         ) : Disposable {
             /**
              * If the task is disposed.
@@ -103,11 +103,11 @@ abstract class AbstractScheduler : Scheduler() {
             private var disposed = false
             override fun dispose() {
                 disposed = true
-                bungeeTask.cancel()
+                bukkitTask.cancel()
             }
 
             override fun isDisposed(): Boolean {
-                return disposed
+                return disposed && !bukkitTask.owner.server.scheduler.isCurrentlyRunning(bukkitTask.taskId)
             }
         }
 

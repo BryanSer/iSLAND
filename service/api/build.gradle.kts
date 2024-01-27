@@ -11,6 +11,7 @@ version = "1.0-SNAPSHOT"
 dependencies {
     implementation(project(":model"))
     implementation(kotlin("stdlib-jdk8"))
+    implementation("com.google.code.gson:gson:2.8.0")
 }
 
 tasks.getByName<Test>("test") {

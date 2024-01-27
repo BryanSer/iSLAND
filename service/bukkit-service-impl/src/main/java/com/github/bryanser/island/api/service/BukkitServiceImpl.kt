@@ -25,7 +25,9 @@ import kotlin.collections.HashMap
 class BukkitServiceImpl(
     val plugin: JavaPlugin
 ) : PluginMessageListener {
-    val gson = GsonBuilder().create()
+    companion object{
+        val gson = GsonBuilder().create()
+    }
     private val registerBukkitImpl = HashMap<String, BukkitImplDelegate>()
 
     init {
@@ -42,7 +44,7 @@ class BukkitServiceImpl(
     }
 
     fun registerBukkitAPI(api: BukkitAPI) {
-        registerBukkitImpl[api.javaClass.name] = BukkitImplDelegate(plugin, api)
+        registerBukkitImpl[api.javaClass.name] = BukkitImplDelegate(this, api)
     }
 
     private fun <T : BungeeAPI> createBungeeAPIDelegate(clazz: Class<T>): T {
@@ -78,6 +80,12 @@ class BukkitServiceImpl(
 
     }
 
+    internal fun sendResultToBungee(message: ByteArray){
+        Bukkit.getServer().sendPluginMessage(
+            plugin, ServiceManager.CHANNEL_BUKKITAPI_BUKKIT_BUNGEE, message
+        )
+    }
+
 
     private fun onCallbackReceived(message: ByteArray) {
         Observable.fromCallable {
@@ -86,7 +94,7 @@ class BukkitServiceImpl(
             val uuid = UUID(input.readLong(), input.readLong())
             val (singleType, emitter) = emitters.remove(uuid) ?: throw IllegalStateException()
             val result: Any = if (singleType != null) {
-                input.readNext(singleType)
+                input.readNext(singleType) ?: throw IllegalStateException()
             } else {
                 Any()
             }
@@ -121,42 +129,3 @@ class BukkitServiceImpl(
     }
 }
 
-fun ObjectInputStream.readNext(type: Type): Any {
-    return when (type) {
-        Int::class.java -> {
-            this.readInt()
-        }
-
-        Short::class.java -> {
-            this.readShort()
-        }
-
-        Byte::class.java -> {
-            this.readBoolean()
-        }
-
-        Long::class.java -> {
-            this.readLong()
-        }
-
-        Float::class.java -> {
-            this.readFloat()
-        }
-
-        Double::class.java -> {
-            this.readDouble()
-        }
-
-        Boolean::class.java -> {
-            this.readBoolean()
-        }
-
-        String::class.java -> {
-            this.readUTF()
-        }
-
-        else -> {
-            gson.fromJson(this.readUTF(), type)
-        }
-    }
-}
