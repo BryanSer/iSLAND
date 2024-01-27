@@ -13,35 +13,19 @@ object ServiceManager {
     const val CHANNEL_BUKKITAPI_BUNGEE_BUKKIT = "island:bukkitAPI:bungee"
 
     @PublishedApi
-    internal val bukkitAPICache = ConcurrentHashMap<Class<out BukkitAPI>, BukkitAPI>()
-    @PublishedApi
     internal val bungeeAPICache = ConcurrentHashMap<Class<out BungeeAPI>, BungeeAPI>()
 
-    lateinit var bukkitAPICreator: (Class<out BukkitAPI>) -> BukkitAPI
-    lateinit var bungeeAPICreator: (Class<out BungeeAPI>) -> BungeeAPI
-
-    inline fun <reified API : BukkitAPI> getBukkitAPI(): API {
-        val cache = bukkitAPICache[API::class.java] as? API
-        if (cache != null) {
-            return cache
-        } else {
-            synchronized(API::class.java){
-                (bukkitAPICache[API::class.java] as? API)?.let {
-                    return it
-                }
-                val api = bukkitAPICreator(API::class.java) as API
-                bukkitAPICache[API::class.java] = api
-                return api
-            }
-        }
-    }
+    @PublishedApi
+    internal lateinit var bungeeAPICreator: (Class<out BungeeAPI>) -> BungeeAPI
+    @PublishedApi
+    internal lateinit var bukkitAPICreator: (Class<out BukkitAPI>) -> BukkitAPI
 
     inline fun <reified API : BungeeAPI> getBungeeAPI(): API {
         val cache = bungeeAPICache[API::class.java] as? API
         if (cache != null) {
             return cache
         } else {
-            synchronized(API::class.java){
+            synchronized(API::class.java) {
                 (bungeeAPICache[API::class.java] as? API)?.let {
                     return it
                 }
@@ -52,5 +36,8 @@ object ServiceManager {
         }
     }
 
+    inline fun <reified API : BukkitAPI> getBukkitAPI(): API {
+        return bukkitAPICreator(API::class.java) as API
+    }
 
 }

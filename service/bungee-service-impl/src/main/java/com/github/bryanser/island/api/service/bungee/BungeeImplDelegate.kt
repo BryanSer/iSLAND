@@ -1,22 +1,22 @@
-package com.github.bryanser.island.api.service
+package com.github.bryanser.island.api.service.bungee
 
-import com.github.bryanser.island.api.BukkitAPI
+import com.github.bryanser.island.api.BungeeAPI
+import com.github.bryanser.island.api.service.MethodInfo
 import com.github.bryanser.island.base.ConsoleLogger
 import io.reactivex.schedulers.Schedulers
-import org.bukkit.plugin.Plugin
+import net.md_5.bungee.api.connection.Server
 import java.io.ObjectInputStream
 import java.util.*
 
-class BukkitImplDelegate(
-    val service: BukkitServiceImpl,
-    val impl: BukkitAPI
+class BungeeImplDelegate(
+    val service: BungeeServiceImpl,
+    val impl: BungeeAPI
 ) {
-    val methodList: List<MethodInfo<out BukkitAPI>>
-
+    val methodList: List<MethodInfo<out BungeeAPI>>
     init {
         val methods = impl.javaClass.methods
         methodList = methods.mapIndexed { index, method ->
-            MethodInfo(index, method, impl, service::sendResultToBungee)
+            MethodInfo(index, method, impl)
         }
     }
 
@@ -31,7 +31,7 @@ class BukkitImplDelegate(
      * var arg
      *
      */
-    fun onReceivedCall(uuid: UUID, input: ObjectInputStream) {
+    fun onReceivedCall(uuid: UUID, input: ObjectInputStream, from:Server) {
         val methodName = input.readUTF()
         val index = input.readInt()
         val info = methodList.getOrNull(index) ?: run {
@@ -39,7 +39,9 @@ class BukkitImplDelegate(
             return
         }
         Schedulers.io().scheduleDirect {
-            info.callMethod(uuid, input)
+            info.callMethod(uuid, input)?.subscribe { it->
+                service.sendResultToBukkit(from.info, it)
+            }
         }
 
 

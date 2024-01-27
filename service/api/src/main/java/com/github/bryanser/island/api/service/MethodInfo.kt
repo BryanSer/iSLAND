@@ -17,8 +17,7 @@ import java.util.*
 class MethodInfo<T : RemoteAPI>(
     val index: Int,
     val method: Method,
-    val invokeThis: T,
-    val onMethodReturn: (ByteArray) -> Unit
+    val invokeThis: T
 ) {
     val argSize: Int
     val argTypeList: List<Type>
@@ -53,11 +52,12 @@ class MethodInfo<T : RemoteAPI>(
         }
     }
 
-    fun callMethod(uuid: UUID, input: ObjectInputStream) {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    fun callMethod(uuid: UUID, input: ObjectInputStream):Single<ByteArray>?{
         val size = input.readInt()
         if (size != argSize) {
             ConsoleLogger.logger.logE("method($name@$index) call error, input arg size = $size, request size = $argSize")
-            return
+            return null
         }
         val argArray = arrayOfNulls<Any?>(size)
         for ((i, type) in argTypeList.withIndex()) {
@@ -66,7 +66,7 @@ class MethodInfo<T : RemoteAPI>(
         }
         val result = method.invoke(invokeThis, *argArray)
         if (isSingle && singleType != null && result is Single<*>) {
-            result.subscribeOn(Schedulers.io()).map {
+            return result.subscribeOn(Schedulers.io()).map {
                 val byteOut = ByteArrayOutputStream()
                 val output = ObjectOutputStream(byteOut)
                 output.writeLong(uuid.mostSignificantBits)
@@ -74,11 +74,10 @@ class MethodInfo<T : RemoteAPI>(
                 output.writeNext(it)
                 output.flush()
                 byteOut.toByteArray()
-            }.subscribe { it ->
-                onMethodReturn(it)
             }
+        }else{
+            return null
         }
-
     }
 }
 

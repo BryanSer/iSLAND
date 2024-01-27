@@ -1,6 +1,7 @@
-package com.github.bryanser.island.api.service
+package com.github.bryanser.island.api.service.bukkit
 
 import com.github.bryanser.island.api.BungeeAPI
+import com.github.bryanser.island.api.service.writeNext
 import com.google.gson.GsonBuilder
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
@@ -14,7 +15,7 @@ import java.lang.reflect.Type
 import java.util.UUID
 
 class ProxyInvocationHandler(
-    val service:BukkitServiceImpl,
+    val service: BukkitServiceImpl,
     val targetClass: Class<out BungeeAPI>
 ) : InvocationHandler {
 

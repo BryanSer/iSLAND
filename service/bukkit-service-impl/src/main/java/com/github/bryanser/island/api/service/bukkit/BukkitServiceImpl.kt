@@ -1,7 +1,9 @@
-package com.github.bryanser.island.api.service
+package com.github.bryanser.island.api.service.bukkit
 
 import com.github.bryanser.island.api.BukkitAPI
 import com.github.bryanser.island.api.BungeeAPI
+import com.github.bryanser.island.api.service.ServiceManager
+import com.github.bryanser.island.api.service.readNext
 import com.google.gson.GsonBuilder
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -19,7 +21,6 @@ import java.lang.reflect.Proxy
 import java.lang.reflect.Type
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.HashMap
 
 class BukkitServiceImpl(
@@ -39,6 +40,9 @@ class BukkitServiceImpl(
             .registerIncomingPluginChannel(plugin, ServiceManager.CHANNEL_BUKKITAPI_BUNGEE_BUKKIT, this)
         ServiceManager.bungeeAPICreator = {
             createBungeeAPIDelegate(it)
+        }
+        ServiceManager.bukkitAPICreator = {
+            registerBukkitImpl[it.name]!!.impl
         }
 
     }
