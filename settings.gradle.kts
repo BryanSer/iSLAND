@@ -13,8 +13,10 @@ dependencyResolutionManagement {
         maven("https://oss.sonatype.org/content/groups/public/")
         maven("https://repo.dmulloy2.net/nexus/repository/public/")
         maven("https://ci.ender.zone/plugin/repository/everything/")
+        maven("https://repo.onarandombox.com/content/groups/public/")
     }
 }
 include("service:api")
 include("service:bukkit-service-impl")
 include("service:bungee-service-impl")
+include("island")
