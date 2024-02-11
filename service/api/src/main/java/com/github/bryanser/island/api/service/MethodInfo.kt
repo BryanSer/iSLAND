@@ -2,9 +2,13 @@ package com.github.bryanser.island.api.service
 
 import com.github.bryanser.island.api.RemoteAPI
 import com.github.bryanser.island.base.ConsoleLogger
-import com.google.gson.GsonBuilder
+import com.github.bryanser.island.base.globalJson
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.serializer
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
@@ -24,10 +28,6 @@ class MethodInfo<T : RemoteAPI>(
     val isSingle: Boolean
     val singleType: Type?
     val name: String
-
-    companion object {
-        val gson = GsonBuilder().create()
-    }
 
     init {
         val args = method.parameterTypes
@@ -123,7 +123,7 @@ fun ObjectOutputStream.writeNext(arg: Any?) {
         }
 
         else -> {
-            val json = MethodInfo.gson.toJson(arg)
+            val json = globalJson.encodeToString(arg)
             this.writeUTF(json)
         }
     }
@@ -168,7 +168,7 @@ fun ObjectInputStream.readNext(type: Type): Any? {
         }
 
         else -> {
-            MethodInfo.gson.fromJson(this.readUTF(), type)
+            globalJson.decodeFromString(serializer(type), this.readUTF())
         }
     }
 }

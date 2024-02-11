@@ -2,7 +2,6 @@ package com.github.bryanser.island.api.service.bungee
 
 import com.github.bryanser.island.api.BukkitAPI
 import com.github.bryanser.island.api.service.writeNext
-import com.google.gson.GsonBuilder
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import net.md_5.bungee.api.config.ServerInfo
@@ -21,9 +20,6 @@ class ProxyInvocationHandlers(
 ){
     private val methodMap = hashMapOf<Method, (ServerInfo, Array<out Any?>) -> Any?>()
 
-    companion object {
-        val gson = GsonBuilder().create()
-    }
 
     init{
         val methods = targetClass.methods

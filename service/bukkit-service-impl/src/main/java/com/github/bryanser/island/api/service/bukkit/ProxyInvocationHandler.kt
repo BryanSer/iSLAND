@@ -20,7 +20,6 @@ class ProxyInvocationHandler(
 ) : InvocationHandler {
 
     private val methodMap = hashMapOf<Method, (Array<out Any?>) -> Any?>()
-    val gson = GsonBuilder().create()
 
     init {
         val methods = targetClass.methods

@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("java")
     kotlin("jvm") version "1.8.0"
+    kotlin("plugin.serialization") version "1.8.0"
 }
 
 group = "com.github.bryanser"
@@ -17,7 +18,6 @@ dependencies {
     implementation(project(":model"))
     implementation(project(":service:api"))
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
-    implementation("com.google.code.gson:gson:2.8.0")
 
 }
 

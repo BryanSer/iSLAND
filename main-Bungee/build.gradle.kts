@@ -4,6 +4,7 @@ plugins {
     id("java")
     kotlin("jvm") version "1.8.0"
     id("com.github.johnrengelman.shadow") version "7.0.0"
+    kotlin("plugin.serialization") version "1.8.0"
 }
 group = "com.github.bryanser"
 version = "1.0-SNAPSHOT"

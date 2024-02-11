@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("java")
     kotlin("jvm") version "1.8.0"
+    kotlin("plugin.serialization") version "1.8.0"
 }
 
 group = "com.github.bryanser"
@@ -17,6 +18,7 @@ dependencies {
     compileOnly(kotlin("stdlib-jdk8"))
     api("io.reactivex.rxjava2:rxjava:2.2.21")
     api("io.reactivex.rxjava2:rxkotlin:2.0.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
 }
 

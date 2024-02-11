@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("java")
     kotlin("jvm") version "1.8.0"
+    kotlin("plugin.serialization") version "1.8.0"
 }
 
 group = "org.example"
@@ -17,6 +18,10 @@ dependencies {
     implementation(project(":model"))
     implementation(project(":service:bungee-service-impl"))
     implementation(project(":service:api"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    // https://mvnrepository.com/artifact/com.github.bryanser/BrAPI
+    compileOnly("com.github.bryanser:BrAPI:Kt-1.0.82")
+    compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
 }
 
 tasks.getByName<Test>("test") {

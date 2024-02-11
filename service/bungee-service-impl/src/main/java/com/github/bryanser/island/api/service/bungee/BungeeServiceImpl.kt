@@ -4,7 +4,6 @@ import com.github.bryanser.island.api.BukkitAPI
 import com.github.bryanser.island.api.BungeeAPI
 import com.github.bryanser.island.api.service.ServiceManager
 import com.github.bryanser.island.api.service.readNext
-import com.google.gson.GsonBuilder
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.SingleEmitter
@@ -28,10 +27,6 @@ import kotlin.collections.HashMap
 class BungeeServiceImpl(
     val plugin: Plugin
 ) : Listener {
-
-    companion object {
-        val gson = GsonBuilder().create()
-    }
 
     private val emitters = ConcurrentHashMap<UUID, Pair<Type?, SingleEmitter<Any>>>()
     private val handlerCache = ConcurrentHashMap<Class<out BukkitAPI>, ProxyInvocationHandlers>()
